@@ -1,0 +1,22 @@
+cat > .gitignore <<EOL
+# Python cache
+__pycache__/
+*.pyc
+
+# Virtual environment
+.venv/
+env/
+venv/
+
+# Zip veya SQL yedekleri
+*.zip
+*.sql
+
+# IDE / PyCharm
+.idea/
+*.iml
+
+# OS dosyaları
+.DS_Store
+EOL
+.env
