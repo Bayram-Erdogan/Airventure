@@ -4,6 +4,10 @@ import os
 import random
 import sql_queries
 import player
+from geopy.distance import geodesic
+from geopy.geocoders import Nominatim
+geolocator = Nominatim(user_agent="X")
+
 
 load_dotenv()
 
@@ -113,7 +117,6 @@ def get_iso_country_code_by_country_name(country):
     sql= sql_queries.get_iso_country_by_country_name
     cursor.execute(sql, (country,))
     result = cursor.fetchone()[0]
-    cursor.close()
     return result
 
 # This function takes the number of passengers that the plane can carry according to the plane ID and determines the
@@ -207,4 +210,137 @@ def get_municipality_by_ident(ident):
     cursor.execute(sql,(ident,))
     row = cursor.fetchone()
     return row[0] if row else None
+def matkan_pituus(pelaaja,new_Airport):
+    sql=sql_queries.get_municipality_by_name
+    cursor.execute(sql, (pelaaja,))
+    cursor.fetchone()
+    paikaA = cursor.fetchone()[0]
+    paika1 = geolocator.geocode(paikaA)
+    sql2=sql_queries.get_municipality_by_ident
+    cursor.execute(sql2, (new_Airport,))
+    sq = cursor.fetchone()
+    paikaB = sq[0]
+    paika2 = geolocator.geocode(paikaB)
 
+    coords_a = (paika1.latitude, paika2.longitude)
+    coords_b = (paika2.latitude, paika2.longitude)
+    distance = geodesic(coords_a, coords_b).kilometers
+    sql3=sql_queries.update_place_B
+    cursor.execute(sql3,
+                   (paikaB, new_Airport, pelaaja))
+    cursor.fetchall()
+
+    print(f"  matka stä iin  kestä  {distance:.2f} Km")
+    return distance // 1
+
+
+def Balance(pelaaja):
+    sql1=sql_queries.select_balances
+    cursor.execute(sql1, (pelaaja,))
+    pelaajanLompako = cursor.fetchone()[0]
+    return pelaajanLompako
+
+def nukyinen_tanki(pelaaja):
+    sql1=sql_queries.curent_fule
+    cursor.execute(sql1,(pelaaja,))
+    fuel = cursor.fetchone()[0]
+    return fuel
+
+def maxfule(pelaaja):
+    sql1=sql_queries.plane_id
+    cursor.execute(sql1,(pelaaja,))
+    plane_id = cursor.fetchone()[0]
+    sql2=sql_queries.tank_capacity_by_id
+    cursor.execute(sql2, (plane_id,))
+    tank_capacity = cursor.fetchone()[0]
+    return tank_capacity
+
+def matkan_kulutus (pelaaja,km):
+    sql1=sql_queries.curent_fule
+    cursor.execute(sql1, (pelaaja,))
+    fule = cursor.fetchone()
+    kulutus = km * 1.2
+    return kulutus
+
+def tankausmatkan_jalken(pelaaja,km):
+    sql1=sql_queries.curent_fule
+    cursor.execute(sql1,(pelaaja,))
+    fule =cursor.fetchone()
+    kulutus = km * 1.2
+    new_fule=fule[0]-kulutus
+    sql2=sql_queries.fule_update
+    cursor.execute(sql2,(new_fule,pelaaja,))
+    return new_fule
+#smagler funkiton
+def smugler_item_shop(user):
+    sql1=sql_queries.get_balance
+    cursor.execute(sql1, (user,))
+    balance=cursor.fetchone()[0]
+    print(f"balans:|{balance}€|")
+    print("    Tavarat                        Hinta   ")
+    print("-------------------------------------------------")
+    print("1.  Segaret          ᝰ🚬    ^        20€     ")
+    print("2.  Fake jacket        🧥    ^        60€     ")
+    print("3.  Chemicals          🧪    ^       200€     ")
+    print("4.  Hand Watch         ⌚    ^       900€     ")
+    print("5.  Alcohole           🍾    ^     1,800€   ")
+    print("6.  Antiquities       📜🏺   ^     4,000€         ")
+    print("7.  Golde bar          🧈    ^    14,000€     ")
+    print("8.  Advance Tecnologia 🦾🤖  ^    20,000€     ")
+    print("                     Back                     ")
+    buy=input("  what you are buying ? : ")
+    if buy == '1':
+        if balance >= 20:
+            print(f"you bouth Segaret your balans will be {balance - 20}€")
+            newbalance = balance - 20
+            sql1 = sql_queries.update_balance
+            cursor.execute(sql1, (newbalance, user))
+    elif buy == '2':
+        if balance >= 60:
+            print(f"you bouth Fake jacket your balans will be {balance - 60}€")
+            newbalance = balance - 60
+            sql1 = sql_queries.update_balance
+            cursor.execute(sql1, (newbalance, user))
+    elif buy == '3':
+        if balance >= 200:
+            print(f"you bouth Chemicals your balans will be {balance - 200}€")
+            newbalance = balance - 200
+            sql1 = sql_queries.update_balance
+            cursor.execute(sql1, (newbalance, user))
+    elif buy == '4':
+        if balance >=900:
+            print(f"you bouth Hand Watch your balans will be {balance - 900}€")
+            newbalance = balance - 900
+            sql1 = sql_queries.update_balance
+            cursor.execute(sql1, (newbalance, user))
+    elif buy == '5':
+        if balance >= 1800:
+            print(f"you bouth Alcohole your balans will be {balance - 1800}€")
+            newbalance = balance - 1800
+            sql1 = sql_queries.update_balance
+            cursor.execute(sql1, (newbalance, user))
+    elif buy == '6':
+        if balance >= 4000:
+            print(f"you bouth Antiquities your balans will be {balance - 4000}€")
+            newbalance = balance - 20
+            sql1 = sql_queries.update_balance
+            cursor.execute(sql1, (newbalance, user))
+    elif buy == '7':
+        if balance >= 14000:
+            print(f"you bouth Gold bar your balans will be {balance - 14000}€")
+            newbalance = balance - 20
+            sql1 = sql_queries.update_balance
+            cursor.execute(sql1, (newbalance, user))
+    elif buy == '8':
+        if balance >= 20000:
+            print(f"you bouth Advance Tecnologia your balans will be {balance - 20000}€")
+            newbalance = balance - 20
+            sql1 = sql_queries.update_balance
+            cursor.execute(sql1, (newbalance, user))
+    else:
+        print (" leaving item shope you did not buy any thing ")
+
+
+
+
+smugler_item_shop("qwe")
