@@ -6,6 +6,7 @@ import sql_queries
 import player
 from geopy.distance import geodesic
 from geopy.geocoders import Nominatim
+import time
 geolocator = Nominatim(user_agent="X")
 
 
@@ -25,7 +26,8 @@ def connection_to_db():
         database=database,
         user=user,
         password=db_password,
-        autocommit=True
+        autocommit=True,
+        buffered=True
     )
     return connection
 
@@ -36,6 +38,19 @@ cursor = connection.cursor()
 def create_player_role(username):
     player_role = input("Please enter your role : P = Pilot, S= Smuggler. ").strip().lower()
     if player_role == "p":
+        print('''⠀⠀⠀⠀⠀⠀⠀⠀⠀⠀⠀⠀⠀⠀⠀⠀⠀⠀⠀⠀⢀⣀⡀⠀⠀⠀⠀⠀⠀⠀⠀⠀⠀⠀⠀⠀⠀⠀⠀⠀⠀⠀⠀⠀⠀⠀⠀⠀⠀⠀⠀⠀⠀⠀⠀⠀⠀⠀⠀⠀⠀
+        ⠀⠀⠀⠀⠀⠀⠀⠀⠀⠀⠀⠀⠀⠀⠀⠀⠀⠀⠀⠀⢘⠀⢃⠀⠀⠀⠀⠀⠀⠀⠀⠀⠀⠀⠀⠀⠀⠀⠀⠀⠀⠀⠀⠀⠀⠀⠀⠀⠀⠀⠀⠀⠀⠀⠀⠀⠀⠀⠀⠀⠀
+        ⠀⠀⠀⠀⠀⠀⠀⠀⠀⠀⠀⠀⠀⠀⠀⠀⠀⠀⠀⠀⢸⠀⠘⡆⠀⠀⠀⠀⠀⠀⠀⠀⠀⠀⠀⠀⠀⠀⠀⠀⠀⠀⠀⠀⠀⠀⠀⠀⠀⠀⠀⠀⠀⠀⠀⠀⠀⠀⠀⠀⠀
+        ⠀⠀⠀⠀⠀⠀⠀⠀⠀⠀⠀⠀⠀⠀⠀⠀⠀⠀⠀⠀⢸⡀⠀⠸⡀⠀⠀⠀⠀⠀⠀⠀⠀⠀⠀⠀⠀⠀⠀⠀⠀⠀⠀⠀⠀⠀⠀⠀⠀⠀⠀⠀⠀⠀⠀⠀⠀⠀⠀⠀⠀
+        ⠀⠀⠀⠀⠀⠀⠀⠀⠀⠀⠀⠀⠀⠀⠀⠀⠀⠀⠀⠀⠀⡇⠀⠀⢃⠀⠀⠀⠀⠀⠀⠀⠀⠀⠀⢀⠀⠀⢀⣀⡤⠤⠄⠒⠒⠒⠠⠤⣀⠀⠀⠀⠀⠀⠀⠀⠀⠀⠀⠀⠀
+        ⠀⠀⠀⠀⠀⠀⠀⠀⠀⠀⠀⠀⠀⠀⠀⠀⠀⠀⠀⠀⠀⡇⠀⠀⠈⢆⡀⠀⠀⠀⠀⢀⣀⠤⠄⠛⠛⠉⠁⢀⣀⢀⡄⠀⠰⡾⠿⠚⠻⢷⡀⠀⠀⠀⠀⠀⠀⠀⠀⠀⠀
+        ⢀⣀⣀⣀⣀⠀⠀⠀⠀⠀⠀⠀⠀⠀⠀⠀⠀⠀⠀⠀⠀⠁⠀⠀⠁⠀⠉⠱⠚⠂⠉⢁⣀⣀⡤⣴⠶⠾⠟⠛⠉⠀⡀⠀⡦⠀⠀⠀⠀⣠⡷⠀⠀⠀⠀⠀⠀⠀⠀⠀⠀
+        ⠉⠉⠛⠒⠛⠿⠿⠿⣶⣶⣖⣂⣀⠤⡤⠤⣤⣀⣀⣀⣀⣸⠀⠀⠀⢀⣀⣤⣤⡶⠾⢛⠛⠉⠁⠄⠀⠀⠀⠀⠀⠈⠁⠀⠑⠄⠀⣤⣾⣿⠃⠀⠀⠀⠀⠀⠀⠀⠀⠀⠀
+        ⠀⠀⠀⠀⠀⠀⠀⠀⠀⠛⠻⠿⢿⣿⣿⣿⣿⣿⣿⣿⣿⣿⣶⣾⣿⡿⠉⣿⣿⣿⣷⡒⠒⣲⣆⡀⠀⠀⠀⣀⡠⢀⣰⣴⣾⣿⢻⣿⣿⣧⣤⠤⢤⣤⠤⢤⣤⣤⣤⣤⣤
+        ⠀⠀⠀⠀⠀⠀⠀⠀⠀⠀⠀⠀⠋⠀⠀⠉⠉⠉⠻⠟⠟⠻⣿⣿⣿⢠⣠⣿⣿⣿⣿⣿⣿⣿⣿⣿⣿⣾⣿⣿⣿⣿⣿⣿⣿⣿⣿⢻⣿⣿⣿⣿⠿⠛⠉⠉⠉⠉⠉⠉⠉
+        ⠀⠀⠀⠀⠀⠀⠀⠀⠀⠀⠀⠀⠀⠀⠀⠀⠀⠀⠀⠀⠀⠀⠀⠉⠛⠿⢿⣿⣿⣿⣻⣿⡿⠿⠟⠛⢻⠿⠟⢻⡿⠻⠍⠉⠉⠻⣿⣼⣿⣿⡿⠋⠀⠀⠀⠀⠀⠀⠀⠀⠀
+        ⠀⠀⠀⠀⠀⠀⠀⠀⠀⠀⠀⠀⠀⠀⠀⠀⠀⠀⠀⠀⠀⠀⠀⠀⠀⠀⠀⢸⣿⣿⡇⠈⠀⠀⠀⠀⠀⠀⢸⣿⣿⡇⠀⠀⠀⠀⠈⠉⠀⠀⠀⠀⠀⠀⠀⠀⠀⠀⠀⠀⠀
+        ⠀⠀⠀⠀⠀⠀⠀⠀⠀⠀⠀⠀⠀⠀⠀⠀⠀⠀⠀⠀⠀⠀⠀⠀⠀⠀⠀⠀⠁⠈⠀⠀⠀⠀⠀⠀⠀⠀⠈⠉⠙⠁⠀⠀⠀⠀⠀⠀⠀⠀⠀⠀⠀⠀⠀⠀⠀⠀⠀⠀⠀''')
         create_a_game_for_pilot_role(username)
     elif player_role == "s":
         create_a_game_for_smuggler_role(username)
@@ -146,10 +161,28 @@ def get_players():
         print(row[0])
 
 def start_game():
-    print("Starting the game...\n")
+    print('''
+          █████╗ ██╗██████╗ ██╗   ██╗███████╗███╗   ██╗████████╗██╗   ██╗██████╗ ███████╗
+         ██╔══██╗██║██╔══██╗██║   ██║██╔════╝████╗  ██║╚══██╔══╝██║   ██║██╔══██╗██╔════╝
+         ███████║██║██████╔╝██║   ██║█████╗  ██╔██╗ ██║   ██║   ██║   ██║██████╔╝█████╗  
+         ██╔══██║██║██╔═══╝ ██║   ██║██╔══╝  ██║╚██╗██║   ██║   ██║   ██║██╔═══╝ ██╔══╝  
+         ██║  ██║██║██║     ╚██████╔╝███████╗██║ ╚████║   ██║   ╚██████╔╝██║     ███████╗
+         ╚═╝  ╚═╝╚═╝╚═╝      ╚═════╝ ╚══════╝╚═╝  ╚═══╝   ╚═╝    ╚═════╝ ╚═╝     ╚══════╝
+    ''')
+
     choice = input("Start a new game (1) or continue previous (2)? ")
 
+    plane = "🛫"
+    print("Loding 🛬")
+    for i in range(4):
+        os.system("cls" if os.name == "nt" else "clear")
+        print("Loading ☁︎" + "☁︎" * i + plane)
+
+        time.sleep(0.4)
+
+
     if choice == "1":
+
         name = input("Enter player name: ")
         add_player(name)
         return name
@@ -210,67 +243,65 @@ def get_municipality_by_ident(ident):
     cursor.execute(sql,(ident,))
     row = cursor.fetchone()
     return row[0] if row else None
-def matkan_pituus(pelaaja,new_Airport):
-    sql=sql_queries.get_municipality_by_name
-    cursor.execute(sql, (pelaaja,))
-    cursor.fetchone()
-    paikaA = cursor.fetchone()[0]
-    paika1 = geolocator.geocode(paikaA)
-    sql2=sql_queries.get_municipality_by_ident
-    cursor.execute(sql2, (new_Airport,))
-    sq = cursor.fetchone()
-    paikaB = sq[0]
-    paika2 = geolocator.geocode(paikaB)
-
-    coords_a = (paika1.latitude, paika2.longitude)
-    coords_b = (paika2.latitude, paika2.longitude)
-    distance = geodesic(coords_a, coords_b).kilometers
-    sql3=sql_queries.update_place_B
-    cursor.execute(sql3,
-                   (paikaB, new_Airport, pelaaja))
-    cursor.fetchall()
-
-    print(f"  matka stä iin  kestä  {distance:.2f} Km")
-    return distance // 1
-
-
 def Balance(pelaaja):
     sql1=sql_queries.select_balances
     cursor.execute(sql1, (pelaaja,))
     pelaajanLompako = cursor.fetchone()[0]
     return pelaajanLompako
-
-def nukyinen_tanki(pelaaja):
+def matkan_kulutus (pelaaja,km):  # korjan laitat pelajan nimija matkan pituus
     sql1=sql_queries.curent_fule
-    cursor.execute(sql1,(pelaaja,))
-    fuel = cursor.fetchone()[0]
-    return fuel
-
-def maxfule(pelaaja):
+    cursor.execute(sql1, (pelaaja,))
+    fule = cursor.fetchone()[0]
+    kulutus = km * 1.2
+    return kulutus
+def nukyinen_tanki(pelaaja):  # pelajan nimillä hake lentäjänn tanki tilane
+    cursor.execute("select current_fuel from game where username =%s",(pelaaja,))
+    fule=(cursor.fetchone()[0])
+    return fule
+def maxfule(pelaaja): #tomi laitat pelaajan nimi että tulosta max fule mitä lentökone otta
     sql1=sql_queries.plane_id
     cursor.execute(sql1,(pelaaja,))
     plane_id = cursor.fetchone()[0]
     sql2=sql_queries.tank_capacity_by_id
     cursor.execute(sql2, (plane_id,))
     tank_capacity = cursor.fetchone()[0]
+    print(tank_capacity)
     return tank_capacity
 
-def matkan_kulutus (pelaaja,km):
-    sql1=sql_queries.curent_fule
-    cursor.execute(sql1, (pelaaja,))
-    fule = cursor.fetchone()
-    kulutus = km * 1.2
-    return kulutus
+def matkan_pituus(pelaaja,new_Airport):     #sain sen toimimaan pida Lisä    buffered=True
 
-def tankausmatkan_jalken(pelaaja,km):
-    sql1=sql_queries.curent_fule
-    cursor.execute(sql1,(pelaaja,))
-    fule =cursor.fetchone()
-    kulutus = km * 1.2
-    new_fule=fule[0]-kulutus
-    sql2=sql_queries.fule_update
-    cursor.execute(sql2,(new_fule,pelaaja,))
-    return new_fule
+    sql=sql_queries.get_municipality_by_name
+    cursor.execute(sql, (pelaaja,))
+    paikaA = (cursor.fetchone())[0]
+    paika1 = geolocator.geocode(paikaA)
+    sql1=sql_queries.get_municipality_by_ident
+    cursor.execute(sql1, (new_Airport,))
+    paikaB = (cursor.fetchone())[0]
+    paika2 = geolocator.geocode(paikaB)
+    coords_a = (paika1.latitude, paika2.longitude)
+    coords_b = (paika2.latitude, paika2.longitude)
+    distance = geodesic(coords_a, coords_b).kilometers
+
+    print(f"  matka stä iin  kestä  {distance:.2f} Km")
+    return distance // 1
+
+def tankaminen(pelaaja):
+    newf=maxfule(pelaaja)-nukyinen_tanki(pelaaja)
+    print(newf)
+    full=input("press 1 if you surly want  to full the tank")
+    if full=="1":
+        cost= newf * 0.6
+        print(f"  tank cost is {cost}")
+        sql=sql_queries.get_balance
+        cursor.execute(sql, (pelaaja,))
+        balance=cursor.fetchone()[0]
+        balance=float(balance) - float(cost)
+        print(f" the full tank costed you {cost} your balance now is  {balance}")
+
+        sql=sql_queries.update_balance
+        cursor.execute(sql,(balance,pelaaja))
+        sql1=sql_queries.fule_update
+        cursor.execute(sql1,(maxfule(pelaaja),pelaaja,))
 #smagler funkiton
 def smugler_item_shop(user):
     sql1=sql_queries.get_balance
@@ -322,19 +353,19 @@ def smugler_item_shop(user):
     elif buy == '6':
         if balance >= 4000:
             print(f"you bouth Antiquities your balans will be {balance - 4000}€")
-            newbalance = balance - 20
+            newbalance = balance - 4000
             sql1 = sql_queries.update_balance
             cursor.execute(sql1, (newbalance, user))
     elif buy == '7':
         if balance >= 14000:
             print(f"you bouth Gold bar your balans will be {balance - 14000}€")
-            newbalance = balance - 20
+            newbalance = balance - 14000
             sql1 = sql_queries.update_balance
             cursor.execute(sql1, (newbalance, user))
     elif buy == '8':
         if balance >= 20000:
             print(f"you bouth Advance Tecnologia your balans will be {balance - 20000}€")
-            newbalance = balance - 20
+            newbalance = balance - 20000
             sql1 = sql_queries.update_balance
             cursor.execute(sql1, (newbalance, user))
     else:
@@ -343,4 +374,9 @@ def smugler_item_shop(user):
 
 
 
-smugler_item_shop("qwe")
+
+
+
+
+
+
