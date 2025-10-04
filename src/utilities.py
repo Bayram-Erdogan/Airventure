@@ -53,6 +53,26 @@ def create_player_role(username):
         ⠀⠀⠀⠀⠀⠀⠀⠀⠀⠀⠀⠀⠀⠀⠀⠀⠀⠀⠀⠀⠀⠀⠀⠀⠀⠀⠀⠀⠁⠈⠀⠀⠀⠀⠀⠀⠀⠀⠈⠉⠙⠁⠀⠀⠀⠀⠀⠀⠀⠀⠀⠀⠀⠀⠀⠀⠀⠀⠀⠀⠀''')
         create_a_game_for_pilot_role(username)
     elif player_role == "s":
+        print('''                     ▓▓▓▓▓▓▓▓▓▓
+                    ▓▓  $$$$  ▓▓
+                   ▓▓  $$$$$$  ▓▓
+                    ▓▓  $$$$  ▓▓
+                     ▓▓▓▓▓▓▓▓▓▓
+                        ▓▓
+                
+                     ███████████
+                    █░░ o   o ░░█
+                    █░░   ▄   ░░█
+                     ███████████
+                        ███
+                    ███████████
+                   █ █ █ █ █ █ █
+                  █  █████████  █
+                 █   █████████   █
+                     █       █
+                     █       █
+                    ███████████
+                ''')
         create_a_game_for_smuggler_role(username)
     else:
         print("You have made an invalid selection. Press P = Pilot, S= Smuggler")
