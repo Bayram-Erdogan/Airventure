@@ -1,27 +1,36 @@
 import utilities
 
 sign_option = int(input("Enter 1 to sign up or 2 for existing player: "))
-username = input("Enter your username : ").strip()
 
 if sign_option == 1:
-    utilities.sign_up(username)
-    player_role=input("Please enter your role : P = Pilot, S= Smuggler. ").strip().lower()
+    while True:
+        username = input("Enter your username: ").strip()
+        registered_successfully = utilities.sign_up(username)
+        if registered_successfully:
+            break
+        else:
+            print("Username already exists. Please try a different one.")
+
+    player_role = None
+    while player_role not in ("p", "s"):
+        player_role = input("Please enter your role: P = Pilot, S = Smuggler: ").strip().lower()
+        if player_role not in ("p", "s"):
+            print("Invalid role. Please enter P or S.")
 
     if player_role == "p":
         utilities.create_a_game_for_pilot_role(username)
-
-    elif player_role == "s":
+    else:
         utilities.create_a_game_for_smuggler_role(username)
 
+    continue_game_choice = input("Would you like to continue to the game now? (y/n): ").lower()
+    if continue_game_choice == "y":
+        utilities.login_successfully(username)
+    else:
+        print("You chose not to start the game. Exiting.")
+
 elif sign_option == 2:
+    username = input("Enter your username : ").strip()
     check_login=utilities.sign_in(username)
-    print(check_login,"\n")
 
     if check_login == "Login successful":
-        chosen_game=utilities.player_selection(username)
-        #chosen_game_id=chosen_game[0]
-        player_role=chosen_game[4]
-        game_option = input("Do you want to start the game? (Y/N)\n").lower().strip()
-        if game_option == "y" and player_role == "PILOT":
-            utilities.start_game(chosen_game)
-            print("It will be continue from here...")
+        utilities.login_successfully(username)
