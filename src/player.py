@@ -9,7 +9,7 @@ class Player:
         airport=None,
         current_fuel=0,
         co2_consumed=0,
-        co2_budget=0,
+        co2_budget=5000,
         flight_duration=0
     ):
         self.game_name = game_name
@@ -36,10 +36,3 @@ class Player:
             f"co2_budget: {self.co2_budget} "
             f"flight_duration: {self.flight_duration} "
         )
-
-
-def start_game():
-    print("Starting the game...")
-    player_name = input("Enter player's name: ").lower()
-    player1 = Player(player_name)
-    return player1
