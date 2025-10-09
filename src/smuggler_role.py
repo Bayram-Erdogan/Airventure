@@ -1,219 +1,32 @@
-import os
-import random
-import sys
-import time
 import mysql.connector
-from dotenv import load_dotenv
-import utilities
+import random
+import time
+import os
 import sql_queries
+import utilities
 
-load_dotenv()
+# === DATABASE CONNECTION ===
+con = mysql.connector.connect(
+    host='127.0.0.1',
+    port=3306,
+    database='flight_game_project',
+    user='root',
+    password='4444',
+    autocommit=True,
+    buffered=True
+)
 
-host = os.getenv("DB_HOST")
-port = os.getenv("DB_PORT")
-database = os.getenv("DB_DATABASE")
-user = os.getenv("DB_USER")
-db_password = os.getenv("DB_PASSWORD")
+cursor = con.cursor()
 
-# This function performs database connection.
-def connection_to_db():
-    connection = mysql.connector.connect(
-        host=host,
-        port=port,
-        database=database,
-        user=user,
-        password=db_password,
-        autocommit=True
-    )
-    return connection
+def get_country(player):
+    cursor.execute("SELECT municipality FROM game WHERE username=%s", (player,))
+    res = cursor.fetchone()
+    return res[0]
 
-connection = connection_to_db()
-cursor = connection.cursor(buffered=True)
+def post_game_to_game_for_smuggler(user_id, username, game_name,player_role,plane_id):
+    sql= sql_queries.post_game_to_game_tbl_for_smuggler
+    cursor.execute(sql, (user_id,username, game_name,player_role,plane_id))
 
-products = [
-    "Vintage Wine Collection",
-    "High-end Watches",
-    "Specialty Coffee Beans",
-    "Counterfeit Luxury Handbags",
-    "Rare Botanical Extracts",
-    "High-capacity Mining Hardware",
-    "Prototype Electronics",
-    "Luxury Perfume Shipment",
-    "Antique Replica Sculptures",
-    "Pharmaceutical Samples"
-]
-
-risks =[
-  "clean_pass",
-  "bribe_encounter",
-  "customs_seizure"
-]
-
-def get_random_product():
-    product = random.choice(products)
-    return product
-
-def get_random_tree_country(country):
-    sql = sql_queries.get_random_tree_country
-    cursor.execute(sql, (country,))
-    result = cursor.fetchall()
-
-    country_names = []
-    for row in result:
-        country_names.append(row[0])
-
-    if len(country_names) <= 3:
-        return country_names
-
-    countries = random.sample(country_names, 3)
-    return countries
-
-def get_a_task(game_id,departure_municipality,country):
-    product =get_random_product()
-    stop_1,stop_2, arrival_country=get_random_tree_country(country)
-    start_situation=input(f"Your mission is to take {product} to {arrival_country}. On your way to {arrival_country}, "
-                          f"you must first stop by {stop_1}.\nThen you will stop by {stop_2} and from there you will go"
-                          f"to {arrival_country}.\n"
-                          f"Are you ready to fly? (Y/N)\n").lower().strip()
-
-    if start_situation == "y":
-        return stop_1, stop_2, arrival_country,product
-    elif start_situation == "n":
-        print("You chose not to start the game. Exiting.")
-        sys.exit()
-
-def start_for_smuggler(game_id, departure_municipality):
-    sql = sql_queries.get_iso_country_by_municipality
-    cursor.execute(sql, (departure_municipality,))
-    country = cursor.fetchone()[0]
-    print(country)
-
-    stop_1, stop_2, arrival_country, product = get_a_task(game_id, departure_municipality, country)
-    countries = [stop_1, stop_2, arrival_country]
-
-    sql = sql_queries.get_user_id_by_game_id
-    cursor.execute(sql, (game_id,))
-    user_id= cursor.fetchone()[0]
-
-    post_task_log(game_id, departure_municipality, stop_1, stop_2, arrival_country, product)
-    task_id=get_task_id(departure_municipality, stop_1, stop_2, arrival_country, product)
-
-    current_location = departure_municipality
-
-    for next_country in countries:
-        get_a_ticket(user_id,game_id)
-        fly_for_task(current_location, next_country)
-
-        risk_result = get_a_risk(current_location, next_country)
-
-        if risk_result == "FAILED":
-            update_task_status('FAILED', task_id)
-            print("Mission failed! Game over.")
-            return
-
-        current_location = next_country
-        print(current_location)
-
-    update_task_status('SUCCESS', task_id)
-    print("Mission completed successfully!")
-
-def get_a_ticket(user_id, game_id):
-    sql = sql_queries.get_balance
-    cursor.execute(sql, (user_id,))
-    balance = cursor.fetchone()[0]
-
-    plane_id=get_plane_id_by_game(game_id)
-
-    sql = sql_queries.get_ticket_price_by_plane_id
-    cursor.execute(sql, (plane_id,))
-    ticket_price = cursor.fetchone()[0]
-
-    balance = balance - ticket_price
-    sql_balance = sql_queries.update_balance
-    cursor.execute(sql_balance, (balance,user_id,))
-
-    #print(f"Get a ticket from {departure_municipality} to {arrival_country}")
-
-
-    print()
-    return
-
-def fly_for_task(departure_municipality, arrival_country):
-    print(f"{departure_municipality} -----> {arrival_country}\n")
-    input("Press Enter to start the flight...")
-
-    for i in range(3, 0, -1):
-        print(i)
-        time.sleep(0.5)
-
-    print("Take off!\n")
-
-    CYAN = "\033[96m"
-    RESET = "\033[0m"
-
-    total_steps = 10
-    for step in range(total_steps + 1):
-
-        clouds = "☁️☁️☁️" * step
-        plane = "✈️"
-
-        percent = (step / total_steps) * 100
-        print(f"{CYAN}Flight progress: {percent:5.1f}%{RESET} - {clouds}{plane}")
-
-        time.sleep(0.5)
-
-    print(f"\n🛬 Landing completed! Arrived at {arrival_country}.\n")
-
-def get_a_risk(current_location, next_country):
-    index = random.randint(0, len(risks) - 1)
-
-    if risks[index] == "clean_pass":
-        print("Clean pass! No issues at this stop.")
-        return "SUCCESS"
-
-    elif risks[index] == "bribe_encounter":
-        print("Bribe encounter! An officer is stopping you.")
-        bribe = 50
-        choice = input("Try to Escape (E) or Pay the Bribe (P)? ").lower().strip()
-
-        if choice == "e":
-            chance = random.randint(1, 2)
-            if chance == 1:
-                print(f"You escaped, but had to pay double bribe: {bribe * 2} €")
-            else:
-                print(f"You didn't escape, paying double bribe: {bribe * 2} €")
-            return "SUCCESS"
-
-        elif choice == "p":
-            print(f"You paid the bribe: {bribe} €")
-            return "SUCCESS"
-
-    elif risks[index] == "customs_seizure":
-        print("Customs seizure! You got caught.")
-        return "FAILED"
-
-def post_task_log(game_id,departure_municipality,stop_1, stop_2, arrival_country, product):
-    sql=sql_queries.post_task_log
-    cursor.execute(sql, (game_id,departure_municipality,stop_1, stop_2, arrival_country, product))
-
-def update_task_status(status, task_id):
-    sql=sql_queries.update_task_status
-    cursor.execute(sql, (status, task_id))
-
-def get_task_id(departure_municipality, stop_1, stop_2, arrival_country, product):
-    sql = sql_queries.get_task_id
-    cursor.execute(sql, (departure_municipality, stop_1, stop_2, arrival_country, product))
-    result=cursor.fetchone()
-    return result[0]
-
-def get_plane_id_by_game(game_id):
-    sql=sql_queries.get_plane_id_by_game_id
-    cursor.execute(sql, (game_id,))
-    result=cursor.fetchone()
-    plane_id =result[0]
-    return plane_id
-
-# This function allows the player to create a game with the smuggler role.
 def create_a_game_for_smuggler_role(username):
     game_name = input("Please enter your game name : ")
     player_role = "SMUGGLER"
@@ -222,10 +35,250 @@ def create_a_game_for_smuggler_role(username):
     user_id=user[0]
     post_game_to_game_for_smuggler(user_id, username, game_name, player_role,plane_id)
 
-    utilities.country_identifier(game_name, player_role)
+def get_balance(player):
+    cursor.execute("SELECT balance FROM users WHERE username=%s", (player,))
+    res = cursor.fetchone()[0]
+    return res
 
-# This function opens a game record in the table by sending the information generated according to the smuggler role
-# to the game table.
-def post_game_to_game_for_smuggler(user_id, username, game_name,player_role,plane_id):
-    sql= sql_queries.post_game_to_game_tbl_for_smuggler
-    cursor.execute(sql, (user_id,username, game_name,player_role,plane_id))
+def update_balance(player, new_balance):
+    cursor.execute("UPDATE users SET balance = %s WHERE username = %s", (new_balance, player))
+
+def update_country(player, new_country):
+    cursor.execute("UPDATE game SET municipality = %s WHERE username = %s", (new_country, player))
+
+def update_leaderboard(player, score):
+    cursor.execute("INSERT INTO leaderboard (username, score) VALUES (%s, %s)", (player, score))
+
+def show_leaderboard():
+    cursor.execute("SELECT username, score FROM leaderboard ORDER BY score DESC LIMIT 10")
+    print("\n🏆 Leaderboard:")
+    for rank, (user, score) in enumerate(cursor.fetchall(), start=1):
+        print(f"{rank}. {user} — {score}€")
+
+    else:
+        cursor.execute("SELECT balance FROM users WHERE username=%s", (player,))
+        res = cursor.fetchone()
+        return res[0] if res else 0
+
+def update_balance(player, new_balance):
+    cursor.execute("UPDATE users SET balance = %s WHERE username = %s", (new_balance, player))
+
+def update_country(player, new_country):
+    cursor.execute("UPDATE game SET municipality = %s WHERE username = %s", (new_country, player))
+
+# === NEIGHBOR MAP ===
+neighbors = {
+    "Finland": ["Sweden", "Norway", "Russia", "Estonia"],
+    "Sweden": ["Finland", "Norway", "Denmark", "Estonia", "Latvia"],
+    "Norway": ["Sweden", "Finland", "Russia", "Denmark", "United Kingdom"],
+    "Denmark": ["Germany", "Sweden", "Norway", "United Kingdom"],
+    "Germany": ["Denmark", "Poland", "Netherlands", "Belgium", "France", "Switzerland", "Austria", "Czech Republic", "Luxembourg"],
+    "Poland": ["Germany", "Czech Republic", "Slovakia", "Ukraine", "Belarus", "Lithuania", "Sweden"],
+    "France": ["Belgium", "Luxembourg", "Germany", "Switzerland", "Italy", "Spain", "Andorra", "Monaco", "United Kingdom"],
+    "Spain": ["France", "Portugal", "Andorra", "United Kingdom", "Italy"],
+    "Portugal": ["Spain", "United Kingdom"],
+    "Italy": ["France", "Switzerland", "Austria", "Slovenia", "San Marino", "Vatican City", "Croatia", "Malta"],
+    "Austria": ["Germany", "Czech Republic", "Slovakia", "Hungary", "Slovenia", "Italy", "Switzerland", "Liechtenstein"],
+    "Switzerland": ["Germany", "France", "Italy", "Austria", "Liechtenstein"],
+    "Netherlands": ["Germany", "Belgium", "United Kingdom"],
+    "Belgium": ["France", "Netherlands", "Germany", "Luxembourg", "United Kingdom"],
+    "Luxembourg": ["Belgium", "Germany", "France"],
+    "Czech Republic": ["Germany", "Poland", "Slovakia", "Austria"],
+    "Slovakia": ["Czech Republic", "Poland", "Ukraine", "Hungary", "Austria"],
+    "Hungary": ["Slovakia", "Ukraine", "Romania", "Serbia", "Croatia", "Slovenia", "Austria"],
+    "Romania": ["Ukraine", "Moldova", "Bulgaria", "Serbia", "Hungary"],
+    "Serbia": ["Hungary", "Romania", "Bulgaria", "North Macedonia", "Kosovo", "Montenegro", "Bosnia and Herzegovina", "Croatia"],
+    "Croatia": ["Slovenia", "Hungary", "Serbia", "Bosnia and Herzegovina", "Montenegro", "Italy"],
+    "Slovenia": ["Italy", "Austria", "Hungary", "Croatia"],
+    "Bosnia and Herzegovina": ["Croatia", "Serbia", "Montenegro"],
+    "Montenegro": ["Croatia", "Bosnia and Herzegovina", "Serbia", "Kosovo", "Albania", "Italy"],
+    "Albania": ["Montenegro", "Kosovo", "North Macedonia", "Greece", "Italy"],
+    "North Macedonia": ["Serbia", "Kosovo", "Albania", "Greece", "Bulgaria"],
+    "Bulgaria": ["Romania", "Serbia", "North Macedonia", "Greece"],
+    "Greece": ["Albania", "North Macedonia", "Bulgaria", "Italy"],
+    "Kosovo": ["Serbia", "Montenegro", "Albania", "North Macedonia"],
+    "Ukraine": ["Poland", "Slovakia", "Hungary", "Romania", "Moldova", "Belarus", "Russia"],
+    "Belarus": ["Latvia", "Lithuania", "Poland", "Ukraine", "Russia"],
+    "Lithuania": ["Latvia", "Belarus", "Poland", "Russia", "Sweden"],
+    "Latvia": ["Estonia", "Lithuania", "Belarus", "Russia", "Sweden"],
+    "Estonia": ["Latvia", "Russia", "Finland", "Sweden"],
+    "Moldova": ["Romania", "Ukraine"],
+    "Andorra": ["France", "Spain"],
+    "Monaco": ["France", "Italy"],
+    "San Marino": ["Italy"],
+    "Vatican City": ["Italy"],
+    "Liechtenstein": ["Switzerland", "Austria"],
+    "United Kingdom": ["Ireland", "France", "Belgium", "Netherlands", "Norway", "Denmark", "Spain", "Portugal"],
+    "Ireland": ["United Kingdom", "France"],
+    "Malta": ["Italy"],
+    "Russia": ["Norway", "Finland", "Estonia", "Latvia", "Lithuania", "Poland", "Belarus", "Ukraine"]
+}
+
+# === GAME START ===
+player = "fahad"
+
+def smuggler_role(player):
+    money = get_balance(player)
+    current = get_country(player)
+
+    cursor.execute("SELECT name FROM country WHERE continent='EU' ORDER BY RAND() LIMIT 1")
+    res = cursor.fetchone()
+    target = res[0]
+
+    goods = ["Gold", "Diamond", "Cigarette", "Jewelry", "Alcohol"]
+    chosen_good = random.choice(goods)
+    base_reward = random.randint(500, 1500)
+
+    print('''                     ▓▓▓▓▓▓▓▓▓▓▓▓▓▓▓▓▓▓▓▓▓▓▓▓▓▓▓▓▓▓▓▓▓▓▓▓▓▓▓▓▓▓▓▓▓▓▓▓▓▓▓▓▓▓▓▓▓▓▓▓▓
+                         ▓  Welcome to SMUGGLER LIFE 💼                              ▓
+                        ▓   My name is gustavo                                     ▓
+                         ▓  But you can call me gus                                 ▓ 
+                        ▓  im the one who give missions next task going to be      ▓''')
+    print(f"                     ▓      You are smuggling {chosen_good} from {current} to {target}. ▓")
+    print('''                     ▓▓▓▓▓▓▓▓▓▓▓▓▓▓▓▓▓▓▓▓▓▓▓▓▓▓▓▓▓▓▓▓▓▓▓▓▓▓▓▓▓▓▓▓▓▓▓▓▓▓▓▓▓▓▓▓▓▓▓
+                                        ▓▓
+                                    ▓▓
+                         ███████████
+                        █░░░░░░░░░░░█
+                        █░░ o   o ░░█
+                        █░░░ ▄▄▄ ░░░█
+                         ███████████
+                            ███
+                        ███████████
+                       █ █ █ █ █ █ █
+                      █  █████████  █
+                     █   █████████   █
+                        ███████████
+    ''')
+
+    print(f"💰 Balance: {money}€")
+    print("You have 13 moves to reach your target.\n")
+
+    max_moves = 13
+    moves = 0
+    penalty_half_final = False
+    while True:
+        if current == target:
+            final_reward = 300
+            money += final_reward
+            update_balance(player, money)
+            update_country(player, target)
+            print(f"\n✅ You reached {target} in {moves} moves!")
+            print(f"You earned 300€. Final balance: {money}€")
+            print("🎉 Mission complete. Game over.")
+            update_leaderboard(player, money)
+            show_leaderboard()
+            moves=0
+            current = get_country(player)
+
+            cursor.execute("SELECT name FROM country WHERE continent='EU' ORDER BY RAND() LIMIT 1")
+            res = cursor.fetchone()
+            target = res[0]
+            chosen_good = random.choice(goods)
+
+            print('''                     ▓▓▓▓▓▓▓▓▓▓▓▓▓▓▓▓▓▓▓▓▓▓▓▓▓▓▓▓▓▓▓▓▓▓▓▓▓▓▓▓▓▓▓▓▓▓▓▓▓▓▓▓▓▓▓▓▓▓▓▓▓
+                      ▓  you are geting into                                                   ▓
+                      ▓  Its nice to work withe you,                                        ▓
+                      ▓                                                                      ▓ 
+                                            ''')
+            print(f"                     ▓ next mission     You are smuggling {chosen_good} from {current} to {target}. ▓")
+            print("                      ▓   if you face any trouble you can call me i wont answer anyway▓")
+            print('''                     ▓▓▓▓▓▓▓▓▓▓▓▓▓▓▓▓▓▓▓▓▓▓▓▓▓▓▓▓▓▓▓▓▓▓▓▓▓▓▓▓▓▓▓▓▓▓▓▓▓▓▓▓▓▓▓▓▓▓▓
+                                                            ▓▓
+                                                        ▓▓
+                                             ███████████
+                                            █░░░░░░░░░░░█
+                                            █░░ o   o ░░█
+                                            █░░░ ▄▄▄ ░░░█
+                                             ███████████
+                                                ███
+                                            ███████████
+                                           █ █ █ █ █ █ █
+                                          █  █████████  █
+                                         █   █████████   █
+                                            ███████████
+                        ''')
+
+        if moves >= max_moves:
+            print("\n😵 You got lost after 13 moves! Mission failed.")
+            update_leaderboard(player, money)
+            show_leaderboard()
+
+        # === FIX ADDED HERE ===
+        if current not in neighbors or not neighbors[current]:
+            current = "Finland"
+            update_country(player, current)
+        # === END FIX ===
+
+        choices = neighbors[current]
+        print(f"\n🌍 You are in {current}. Move {moves + 1}/{max_moves}")
+        print("Choose your next move:")
+        for i, c in enumerate(choices, start=1):
+            print(f"{i}. Travel to {c}")
+        print(f"{len(choices) + 1}. ✈️ Use plane to go straight to {target} (60% risk)")
+        print("q. Quit game")
+
+        choice = input("Your choice: ").strip()
+        if choice == 'q':
+            print("You quit the game.")
+            update_leaderboard(player, money)
+            show_leaderboard()
+
+        if not choice.isdigit() or int(choice) < 1 or int(choice) > len(choices) + 1:
+            print("Invalid choice.")
+            continue
+
+        # Police encounter
+        if random.randint(1, 5) == 1:
+            print("\n🚔 Police stopped you!")
+            print("1) Lie")
+            print("2) Tell the truth")
+            pol = input("Choose (1/2): ").strip()
+            if pol == '1':
+                print("You lied to police...")
+                if random.randint(1, 10) <= 2:
+                    print("😅 Your lie worked! Continue your trip.")
+                else:
+                    print("😱 They found out your lie!.")
+                    money = 0
+                    update_balance(player, money)
+                    print("All your money is confiscated.")
+                    update_leaderboard(player, money)
+                    show_leaderboard()
+
+            elif pol == '2':
+                print("You told the truth. They fined you 50% of your reward.")
+                penalty_half_final = True
+            else:
+                print("Police didn’t like your hesitation. You're detained.")
+                money = 0
+                update_balance(player, money)
+                update_leaderboard(player, money)
+                show_leaderboard()
+
+        if int(choice) == len(choices) + 1:
+            print(f"✈️ You decided to fly directly to {target}.")
+            plane = "🛫"
+            print("Loding 🛬")
+            for i in range(4):
+                os.system("cls" if os.name == "nt" else "clear")
+                print("Loading ☁︎" + "☁︎" * i + plane)
+                time.sleep(0.4)
+            if random.random() <= 0.6:
+                print("🚨 You got caught smuggling at the airport!")
+                money = 0
+                update_balance(player, money)
+                print("All money lost. Game over.")
+                update_leaderboard(player, money)
+                show_leaderboard()
+            else:
+                print("✅ You made it safely using the plane!")
+                current = target
+                continue
+
+        chosen_country = choices[int(choice) - 1]
+        print(f"You chose {chosen_country}...")
+        time.sleep(1)
+        current = chosen_country
+        update_country(player, current)
+        moves += 1

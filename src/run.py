@@ -8,10 +8,16 @@ from utilities import connection_to_db
 
 connection = connection_to_db()
 cursor = connection.cursor(buffered=True)
-
+print('''
+                            █████╗ ██╗██████╗  ██╗ ██╗███████╗███╗   ██╗████████╗██╗   ██╗██████╗ ███████╗
+                           ██╔══██╗██║██╔══██╗ ██║ ██║██╔════╝████╗  ██║╚══██╔══╝██║   ██║██╔══██╗██╔════╝
+                           ███████║██║██████╔╝ ██║ ██║█████╗  ██╔██╗ ██║   ██║   ██║   ██║██████╔╝█████╗  
+                           ██╔══██║██║██╔╗██║  ██║ ██║██╔══╝  ██║╚██╗██║   ██║   ██║   ██║██╔╗██║ ██╔══╝  
+                           ██║  ██║██║██║║██║  ╚████╔╝███████╗██║ ╚████║   ██║   ╚██████╔╝██║║██║ ███████╗
+                           ╚═╝  ╚═╝╚═╝╚═╝╚══╝  ╚═════╝ ╚══════╝╚═╝  ╚═══╝   ╚═╝    ╚═════╝ ╚═╝╚══╝ ╚══════╝
+                      ''')
 sign_option = int(input("Enter 1 to sign up or 2 for existing player: "))
 
-# This function ensures that new users are created and sent to the database.
 def sign_up(username):
     sql = sql_queries.get_user_id_by_username
     cursor.execute(sql, (username,))
@@ -41,7 +47,6 @@ def sign_in(username):
     else:
         return "Username is incorrect"
 
-# This function regulates the game flow after the user successfully enters the game.
 def login_successfully(username):
     chosen_game =player_selection(username)
     player_role = chosen_game[4]
@@ -54,7 +59,7 @@ def login_successfully(username):
                 pilot_role.start_game(chosen_game)
             elif player_role == "SMUGGLER":
                 chosen_game = utilities.get_game_by_game_id(chosen_game[0])
-                smuggler_role.start_for_smuggler(chosen_game[0], chosen_game[5])
+                smuggler_role.smuggler_role(username)
             else:
                 print(f"Game start logic for role {player_role} not implemented yet.")
                 break
@@ -64,7 +69,6 @@ def login_successfully(username):
         else:
             print("Invalid input. Please enter Y or N.")
 
-# This function allows the user to view existing games and select one or create a new game.
 def player_selection(username):
     player_choice = int(input("Press 1 to view your games, or 2 for a new game.\n"))
     user_id = (utilities.get_user_by_username(username))[0]
@@ -84,7 +88,6 @@ def player_selection(username):
             smuggler_role.create_a_game_for_smuggler_role(username)
             utilities.get_games_by_user_id(user_id)
             return utilities.get_game_to_be_chosen()
-
 if sign_option == 1:
     while True:
         username = input("Enter your username: ").strip()
@@ -103,13 +106,14 @@ if sign_option == 1:
     if player_role == "p":
         pilot_role.create_a_game_for_pilot_role(username)
     else:
-        smuggler_role.create_a_game_for_smuggler_role(username)
+       smuggler_role.create_a_game_for_smuggler_role(username)
 
     continue_game_choice = input("Would you like to continue to the game now? (y/n): ").lower()
     if continue_game_choice == "y":
         login_successfully(username)
     else:
         print("You chose not to start the game. Exiting.")
+
 elif sign_option == 2:
     username = input("Enter your username : ").strip()
     check_login=sign_in(username)
@@ -117,7 +121,7 @@ elif sign_option == 2:
     if check_login == "Login successful":
         login_successfully(username)
 
-# This function allows the player to create a game according to the role she/he/it wants.
+
 def create_player_role(username):
     player_role = input("Please enter your role : P = Pilot, S= Smuggler. ").strip().lower()
     if player_role == "p":
