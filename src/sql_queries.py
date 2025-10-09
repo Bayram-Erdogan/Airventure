@@ -70,9 +70,10 @@ get_required_hour_by_plane_id="select required_hours from planes where id = %s"
 
 #FLIGHT_LOG
 post_flight_log=("insert into flight_log "
-                 "(game_id, plane_id, departure_airport, arrival_airport, flight_duration,"
+                 "(game_id, plane_id, departure_airport, arrival_airport, flight_duration, co2_consumed,"
                  "passengers_count, revenue, weather) "
-                 "values (%s, %s, %s, %s, %s, %s, %s, %s)")
+                 "values (%s, %s, %s, %s, %s, %s, %s, %s, %s)")
+
 
 #GOAL
 get_weather="select description from goal"

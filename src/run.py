@@ -84,6 +84,7 @@ def player_selection(username):
             smuggler_role.create_a_game_for_smuggler_role(username)
             utilities.get_games_by_user_id(user_id)
             return utilities.get_game_to_be_chosen()
+
 if sign_option == 1:
     while True:
         username = input("Enter your username: ").strip()
@@ -109,14 +110,12 @@ if sign_option == 1:
         login_successfully(username)
     else:
         print("You chose not to start the game. Exiting.")
-
 elif sign_option == 2:
     username = input("Enter your username : ").strip()
     check_login=sign_in(username)
 
     if check_login == "Login successful":
         login_successfully(username)
-
 
 # This function allows the player to create a game according to the role she/he/it wants.
 def create_player_role(username):

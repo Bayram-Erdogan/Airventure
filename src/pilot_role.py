@@ -104,7 +104,7 @@ def start_game(chosen_game):
         flight_duration, flight_duration_minutes = update_flight_duration_minutes_by_game_id(chosen_game, km)
         flight_duration = int(flight_duration * weather_factor)
 
-        post_flight_log(chosen_game, arrival_airport_ident, flight_duration, passenger_count, revenue, weather_condition)
+        post_flight_log(chosen_game, arrival_airport_ident, flight_duration, co2_consumed, passenger_count, revenue, weather_condition)
         update_game_by_game_id(arrival_municipality, arrival_airport_ident, current_fuel, co2_consumed, co2_budget,
                                flight_duration_minutes, chosen_game[0])
         utilities.update_user_balance_by_user_id(chosen_game[3], revenue)
@@ -204,14 +204,14 @@ def get_airport_by_ident(ident):
     return result
 
 # This function sends the information about the flight to the flight_log table.
-def post_flight_log(chosen_game, arrival_airport_ident, flight_duration, passenger_count, revenue, weather):
+def post_flight_log(chosen_game, arrival_airport_ident, flight_duration,co2_consumed, passenger_count, revenue, weather):
     game_id=chosen_game[0]
     plane_id=chosen_game[6]
     departure_airport=chosen_game[7]
 
     sql = sql_queries.post_flight_log
     cursor.execute(sql,(game_id, plane_id, departure_airport, arrival_airport_ident,
-                        flight_duration, passenger_count, revenue, weather))
+                        flight_duration,co2_consumed, passenger_count, revenue, weather))
     return
 
 # This function retrieves the weather data from the database to randomly determine the weather conditions during the
